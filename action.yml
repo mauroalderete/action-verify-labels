@@ -1,0 +1,92 @@
+name: 'Verify Labels in Pull Request '
+description: 'It verifies that the pull request has the expected labels'
+inputs:
+  all:
+    description: | 
+      List of the labels.
+      The pull request must be assigned with all of these labels listed.
+    required: false
+    default: ''
+  none:
+    description: | 
+      List of the labels.
+      The pull request must not be assigned with any of these labels listed.
+    required: false
+    default: ''
+  some:
+    description: | 
+      List of the labels.
+      The pull request must be assigned with one or more of these labels listed.
+    required: false
+    default: ''
+  just-one:
+    description: | 
+      List of the labels.
+      The pull request must be assigned only one of these labels listed.
+    required: false
+    default: ''
+  request-review:
+    description: | 
+      Boolean flag. False by default.
+      Should send a request review to notify whether the pull request passed or not this verification.
+    required: false
+    default: 'true'
+  request-review-header:
+    description: |
+      A string that is attached to the beginning of the review comment.
+      Supports GitHub Flavored Markdown.
+    required: false
+    default: 'true'
+  github-token:
+    description: 'The Github token. Only is required if request-review == true.'
+    required: false
+    default: ''
+outputs:
+  approved:
+    description: 'Boolean that indicates if the pull request approved this verification or not.'
+    value: ${{ steps.exit.outputs.approved }}
+  action-status:
+    description: 'Execution status of the action'
+    value: ${{ steps.exit.outputs.action-status }}
+  action-message:
+    description: 'Message associated to the current status of the action'
+    value: ${{ steps.exit.outputs.action-message }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Validation
+      id: start
+      shell: bash
+      run: |
+        #!/bin/sh
+        echo "ACTION_STATUS=${{ start.name }}" >> $GITHUB_ENV
+        echo "ACTION_MESSAGE=" >> $GITHUB_ENV
+        echo "VERIFIED=false" >> $GITHUB_ENV
+
+        # Store token in env to easy the Github CLI authorization
+        echo "GITHUB_TOKEN=${{ inputs.github-token }}" >> $GITHUB_ENV
+
+    - name: End
+      id: end
+      shell: bash
+      run: |
+        #!/bin/sh
+        echo "ACTION_STATUS=${{ start.name }}" >> $GITHUB_ENV
+        echo "ACTION_MESSAGE=" >> $GITHUB_ENV
+
+    - name: Exit
+      if: ${{ always() }}
+      id: exit
+      shell: bash
+      run: |
+        echo "::set-output name=verified::$VERIFIED"
+        echo "::set-output name=action-status::$ACTION_STATUS"
+        echo "::set-output name=action-message::$ACTION_MESSAGE"
+
+    - name: Exit with error
+      if: ${{ failure() }}
+      id: exit-with-error
+      shell: bash
+      run: |
+        echo "$ACTION_STATUS, $ACTION_MESSAGE"
+        exit 1;
