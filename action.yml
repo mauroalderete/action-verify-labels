@@ -55,11 +55,11 @@ runs:
   using: 'composite'
   steps:
     - name: Validation
-      id: start
+      id: validation
       shell: bash
       run: |
         #!/bin/sh
-        echo "ACTION_STATUS=${{ start.name }}" >> $GITHUB_ENV
+        echo "ACTION_STATUS=${{ steps.validation.name }}" >> $GITHUB_ENV
         echo "ACTION_MESSAGE=" >> $GITHUB_ENV
         echo "VERIFIED=false" >> $GITHUB_ENV
 
@@ -71,7 +71,7 @@ runs:
       shell: bash
       run: |
         #!/bin/sh
-        echo "ACTION_STATUS=${{ start.name }}" >> $GITHUB_ENV
+        echo "ACTION_STATUS=${{ steps.end.name }}" >> $GITHUB_ENV
         echo "ACTION_MESSAGE=" >> $GITHUB_ENV
 
     - name: Exit
