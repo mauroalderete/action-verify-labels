@@ -79,7 +79,7 @@ runs:
       id: exit
       shell: bash
       run: |
-        echo "::set-output name=verified::$VERIFIED"
+        echo "::set-output name=approved::$VERIFIED"
         echo "::set-output name=action-status::$ACTION_STATUS"
         echo "::set-output name=action-message::$ACTION_MESSAGE"
 
