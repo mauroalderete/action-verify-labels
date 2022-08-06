@@ -1,0 +1,52 @@
+name: Assign labels
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Assign labels from conventional-commits
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - uses: actions/checkout@v3
+        with:
+          repository: mauroalderete/action-assign-labels-from-conventionals-commit
+          ref: v0
+          token: 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
+          path: ./.github/actions/action-assign-labels-from-conventionals-commit
+          persist-credentials: false
+
+      - name: Execute assign labels
+        id: action-assign-labels
+        uses: ./.github/actions/action-assign-labels-from-conventionals-commit
+        with:
+          pull-request-number: ${{ github.event.pull_request.number }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          conventional-commits: |
+            conventional-commits:
+              - type: 'fix'
+                nouns: ['fix', 'fixed']
+                labels: ['bug']
+              - type: 'feature'
+                nouns: ['feat', 'feature']
+                labels: ['feature']
+              - type: 'breaking_change'
+                nouns: ['BREAKING CHANGE','major','MAJOR']
+                labels: ['BREAKING CHANGE']
+              - type: 'documentation'
+                nouns: ['doc','docu','document','documentation']
+                labels: ['documentation']
+              - type: 'build'
+                nouns: ['build','rebuild']
+                labels: ['build']
+              - type: 'config'
+                nouns: ['config', 'conf', 'cofiguration', 'configure']
+                labels: ['config']
+          maintain-labels-not-matched: false
+          apply-changes: true
