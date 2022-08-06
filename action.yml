@@ -41,6 +41,12 @@ inputs:
     description: 'The Github token. Only is required if request-review == true.'
     required: false
     default: ''
+  pull-request-number:
+    description: |
+      The pull request number to verify.
+      Only is required if this action isn't run on a pull_request event.
+    required: false
+    default: ''
 outputs:
   approved:
     description: 'Boolean that indicates if the pull request approved this verification or not.'
@@ -59,12 +65,72 @@ runs:
       shell: bash
       run: |
         #!/bin/sh
+        # Update action status
         echo "ACTION_STATUS=${{ steps.validation.name }}" >> $GITHUB_ENV
         echo "ACTION_MESSAGE=" >> $GITHUB_ENV
         echo "VERIFIED=false" >> $GITHUB_ENV
 
+        # Validate pull-request-input
+        if [[ '${{ github.event_name }}' != 'pull_request' && '${{ inputs.pull-request-number }}' == '' ]];
+          echo "ACTION_STATUS=FAILED" >> $GITHUB_ENV;
+          echo "ACTION_MESSAGE=pull-request-number is required because the event '${{ github.event_name }}' is not a pull_request event" >> $GITHUB_ENV;
+          exit 1;
+        fi
+
+        # Validate github-token
+        if [[ '${{ inputs.request-review }}' == 'true' && '${{ inputs.github-token }}' == '' ]];
+          echo "ACTION_STATUS=FAILED" >> $GITHUB_ENV;
+          echo "ACTION_MESSAGE=github-token is required when request-review is 'true'" >> $GITHUB_ENV;
+          exit 1;
+        fi
+
+        ALL_LABELS=$(echo ${{ inputs.all }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
+        NONE_LABELS=$(echo ${{ inputs.none }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
+        SOME_LABELS=$(echo ${{ inputs.some }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
+        JUST_ONE_LABELS=$(echo ${{ inputs.just-on }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
+
+        echo "ALL_LABELS=$ALL_LABELS" >> $GITHUB_ENV
+        echo "NONE_LABELS=$NONE_LABELS" >> $GITHUB_ENV
+        echo "SOME_LABELS=$SOME_LABELS" >> $GITHUB_ENV
+        echo "JUST_ONE_LABELS=$JUST_ONE_LABELS" >> $GITHUB_ENV
+
         # Store token in env to easy the Github CLI authorization
         echo "GITHUB_TOKEN=${{ inputs.github-token }}" >> $GITHUB_ENV
+
+    - name: Get labels from pull-request event
+      if: github.event_name == 'pull_request'
+      id: labels-from-event
+      shell: bash
+      run: |
+        #!/bin/sh
+        # Update action status
+        echo "ACTION_STATUS=${{ steps.labels-from-event.name }}" >> $GITHUB_ENV
+        echo "ACTION_MESSAGE=" >> $GITHUB_ENV
+        
+        # Get labels list from event context
+        labels=$(cat << EOF
+        ${{ toJson(github.event.pull_request.labels.*.name) }}
+        EOF
+        )
+
+        # Store the pull request labels found
+        echo "LABELS=$labels" >> $GITHUB_ENV
+
+    - name: Get labels from input
+      if: github.event_name != 'pull_request'
+      id: labels-from-input
+      shell: bash
+      run: |
+        #!/bin/sh
+        # Update action status
+        echo "ACTION_STATUS=${{ steps.labels-from-input.name }}" >> $GITHUB_ENV
+        echo "ACTION_MESSAGE=" >> $GITHUB_ENV
+        
+        # Get labels list from github client by pull request number
+        labels=$(gh pr view ${{ inputs.pull-request-number }} --json labels | jq '.labels[].name' -c)
+        
+        # Store the pull request labels found
+        echo "LABELS=$labels" >> $GITHUB_ENV
 
     - name: End
       id: end
@@ -73,6 +139,12 @@ runs:
         #!/bin/sh
         echo "ACTION_STATUS=${{ steps.end.name }}" >> $GITHUB_ENV
         echo "ACTION_MESSAGE=" >> $GITHUB_ENV
+
+        echo "all: $ALL_LABELS"
+        echo "none: $NONE_LABELS"
+        echo "some: $SOME_LABELS"
+        echo "just-one: $JUST_ONE_LABELS"
+        echo "labels: $LABELS"
 
     - name: Exit
       if: ${{ always() }}
