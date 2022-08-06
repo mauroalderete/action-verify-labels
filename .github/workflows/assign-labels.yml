@@ -50,3 +50,16 @@ jobs:
                 labels: ['config']
           maintain-labels-not-matched: false
           apply-changes: true
+
+      - name: Verify labels
+        if: steps.action-assign-labels.outputs.labels-assigned != '[]' || steps.action-assign-labels.outputs.labels-removed != '[]'
+        id: action-verify-labels
+        uses: ./
+        with:
+          all: ''
+          none: question, wontfix, invalid
+          some: fix, feature, BREAKING CHANGE
+          just-one: ''
+          request-review: true
+          request-review-header: '**:bookmark: verify-labels-bot**'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
