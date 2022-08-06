@@ -114,7 +114,7 @@ runs:
         )
 
         # Store the pull request labels found
-        echo "LABELS=$labels" >> $GITHUB_ENV
+        echo "LABELS=$(echo $labels)" >> $GITHUB_ENV
 
     - name: Get labels from input
       if: github.event_name != 'pull_request'
