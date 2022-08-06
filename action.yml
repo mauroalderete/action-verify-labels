@@ -66,20 +66,18 @@ runs:
       run: |
         #!/bin/sh
         # Update action status
-        echo "ACTION_STATUS=${{ steps.validation.name }}" >> $GITHUB_ENV
+        echo "ACTION_STATUS=VALIDATION" >> $GITHUB_ENV
         echo "ACTION_MESSAGE=" >> $GITHUB_ENV
         echo "VERIFIED=false" >> $GITHUB_ENV
 
         # Validate pull-request-input
         if [[ '${{ github.event_name }}' != 'pull_request' && '${{ inputs.pull-request-number }}' == '' ]]; then
-          echo "ACTION_STATUS=FAILED" >> $GITHUB_ENV;
           echo "ACTION_MESSAGE=pull-request-number is required because the event '${{ github.event_name }}' is not a pull_request event" >> $GITHUB_ENV;
           exit 1;
         fi
 
         # Validate github-token
         if [[ '${{ inputs.request-review }}' == 'true' && '${{ inputs.github-token }}' == '' ]]; then
-          echo "ACTION_STATUS=FAILED" >> $GITHUB_ENV;
           echo "ACTION_MESSAGE=github-token is required when request-review is 'true'" >> $GITHUB_ENV;
           exit 1;
         fi
@@ -99,12 +97,12 @@ runs:
 
     - name: Get labels from pull-request event
       if: github.event_name == 'pull_request'
-      id: labels-from-event
+      id: labels-from-context
       shell: bash
       run: |
         #!/bin/sh
         # Update action status
-        echo "ACTION_STATUS=${{ steps.labels-from-event.name }}" >> $GITHUB_ENV
+        echo "ACTION_STATUS=GET_LABELS_FROM_CONTEXT" >> $GITHUB_ENV
         echo "ACTION_MESSAGE=" >> $GITHUB_ENV
         
         # Get labels list from event context
@@ -118,12 +116,12 @@ runs:
 
     - name: Get labels from input
       if: github.event_name != 'pull_request'
-      id: labels-from-input
+      id: labels-from-api
       shell: bash
       run: |
         #!/bin/sh
         # Update action status
-        echo "ACTION_STATUS=${{ steps.labels-from-input.name }}" >> $GITHUB_ENV
+        echo "ACTION_STATUS=GET_LABELS_FROM_API" >> $GITHUB_ENV
         echo "ACTION_MESSAGE=" >> $GITHUB_ENV
         
         # Get labels list from github client by pull request number
@@ -137,7 +135,7 @@ runs:
       shell: bash
       run: |
         #!/bin/sh
-        echo "ACTION_STATUS=${{ steps.end.name }}" >> $GITHUB_ENV
+        echo "ACTION_STATUS=END" >> $GITHUB_ENV
         echo "ACTION_MESSAGE=" >> $GITHUB_ENV
 
         echo "all: $ALL_LABELS"
