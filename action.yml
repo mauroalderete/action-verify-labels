@@ -71,14 +71,14 @@ runs:
         echo "VERIFIED=false" >> $GITHUB_ENV
 
         # Validate pull-request-input
-        if [[ '${{ github.event_name }}' != 'pull_request' && '${{ inputs.pull-request-number }}' == '' ]];
+        if [[ '${{ github.event_name }}' != 'pull_request' && '${{ inputs.pull-request-number }}' == '' ]]; then
           echo "ACTION_STATUS=FAILED" >> $GITHUB_ENV;
           echo "ACTION_MESSAGE=pull-request-number is required because the event '${{ github.event_name }}' is not a pull_request event" >> $GITHUB_ENV;
           exit 1;
         fi
 
         # Validate github-token
-        if [[ '${{ inputs.request-review }}' == 'true' && '${{ inputs.github-token }}' == '' ]];
+        if [[ '${{ inputs.request-review }}' == 'true' && '${{ inputs.github-token }}' == '' ]]; then
           echo "ACTION_STATUS=FAILED" >> $GITHUB_ENV;
           echo "ACTION_MESSAGE=github-token is required when request-review is 'true'" >> $GITHUB_ENV;
           exit 1;
