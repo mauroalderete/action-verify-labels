@@ -69,10 +69,8 @@ jobs:
         id: action-verify-labels
         uses: ./
         with:
-          all: ''
           none: question, wontfix, invalid
           some: bug, feature, BREAKING CHANGE
-          just-one: ''
           request-review: true
           request-review-header: '**:bookmark: verify-labels-bot**'
           github-token: ${{ secrets.GITHUB_TOKEN }}
