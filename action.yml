@@ -218,7 +218,6 @@ runs:
         echo "ACTION_STATUS=END" >> $GITHUB_ENV
 
         if [[ "$VERIFIED" == 'false' && '${{ inputs.emit-error-if-verify-fail }}' == 'true' ]]; then
-          echo "ACTION_MESSAGE=unapproved" >> $GITHUB_ENV;
           exit 1;
         fi
 
@@ -240,7 +239,7 @@ runs:
         echo "::set-output name=action-status::$ACTION_STATUS"
         echo "::set-output name=action-message::$ACTION_MESSAGE"
 
-        echo "[\"result\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
+        echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
 
     - name: Exit with error
       if: ${{ failure() }}
@@ -250,5 +249,5 @@ runs:
         #!/bin/sh
         # EXIT_WITH_ERROR internal status
 
-        echo "[\"result\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
+        echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
         exit 1;
