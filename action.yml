@@ -300,10 +300,10 @@ runs:
         echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$message\"]"
         echo "# Verify resume" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## Result" >> $GITHUB_STEP_SUMMARY
-        echo "**Approved:** $VERIFIED" >> $GITHUB_STEP_SUMMARY
-        echo "**Send review:** $CREATE_REVIEW" >> $GITHUB_STEP_SUMMARY
-        echo "## Action status" >> $GITHUB_STEP_SUMMARY
+        echo "## $(if [[ $VERIFIED == 'true' ]]; then echo ":heavy_check_mark:"; else echo ":x:"; fi) Result" >> $GITHUB_STEP_SUMMARY
+        echo "**Approved:** $(if [[ $VERIFIED == 'true' ]]; then echo ":heavy_check_mark:"; else echo ":x:"; fi)" >> $GITHUB_STEP_SUMMARY
+        echo "**Send review:** $(if [[ $CREATE_REVIEW == 'true' ]]; then echo ":heavy_check_mark:"; else echo ":heavy_minus_sign:"; fi)" >> $GITHUB_STEP_SUMMARY
+        echo "## $(if [[ $ACTION_STATUS == 'END' && $message == '' ]]; then echo ":heavy_check_mark:"; else echo ":x:"; fi) Action status" >> $GITHUB_STEP_SUMMARY
         echo "**Status:** $ACTION_STATUS" >> $GITHUB_STEP_SUMMARY
         echo "**Message:** $message" >> $GITHUB_STEP_SUMMARY
         echo "## Context" >> $GITHUB_STEP_SUMMARY
