@@ -212,7 +212,7 @@ runs:
         echo "CREATE_REVIEW=false" >> $GITHUB_ENV
 
         # If there is not any previous review written, then will send the first review.
-        if [[ $lastreview == '' ]]; then
+        if [[ $lastreview == 'null' ]]; then
           echo "CREATE_REVIEW=true" >> $GITHUB_ENV
           exit 0;
         fi
