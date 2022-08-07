@@ -205,15 +205,26 @@ runs:
         # GET_LAST_REVIEW status
         echo "ACTION_STATUS=GET_LAST_REVIEW" >> $GITHUB_ENV
 
+        # Get the last review written for this 'github-action'.
         lastreview=$(gh pr view $PULL_REQUEST_NUMBER --json reviews | jq '[ .reviews[] | select( (.author.login == "github-actions") and (.body | startswith("${{ inputs.request-review-header }}") ) ) ] | max_by(.submittedAt)' -c)
 
+        # Initialize the CREATE_REVIEW flag as false by default.
         echo "CREATE_REVIEW=false" >> $GITHUB_ENV
 
-        if [[ $(echo $lastreview | jq '.state') == "\"APPROVE\"" && "$VERIFIED" == "true" ]]; then
+        # If there is not any previous review written, then will send the first review.
+        if [[ $lastreview == '' ]]; then
           echo "CREATE_REVIEW=true" >> $GITHUB_ENV
           exit 0;
         fi
-        if [[ $(echo $lastreview | jq '.state') == "\"REQUEST_CHANGES\"" && "$VERIFIED" == "false" ]]; then
+
+        # If the last review was APPROVE && the current state is UNAPPROVED then will updating the review is required.
+        if [[ $(echo $lastreview | jq '.state') == "\"APPROVE\"" && "$VERIFIED" == "false" ]]; then
+          echo "CREATE_REVIEW=true" >> $GITHUB_ENV
+          exit 0;
+        fi
+
+        # If the last review was UNAPPROVE && the current state is APPROVED then will updating the review is required.
+        if [[ $(echo $lastreview | jq '.state') == "\"REQUEST_CHANGES\"" && "$VERIFIED" == "true" ]]; then
           echo "CREATE_REVIEW=true" >> $GITHUB_ENV
           exit 0;
         fi
@@ -227,6 +238,7 @@ runs:
         # SEND_APPROVED_REVIEW status
         echo "ACTION_STATUS=SEND_APPROVED_REVIEW" >> $GITHUB_ENV
 
+        # Get the GitHub repository name to use it in a request.
         GITHUB_REPOSITORY=$(gh repo view $PULL_REQUEST_NUMBER --json nameWithOwner | jq .nameWithOwner -c --raw-output)
         curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
         -H "Authorization: token ${{ inputs.github-token }}" \
@@ -241,6 +253,7 @@ runs:
         # SEND_UNAPPROVED_REVIEW status
         echo "ACTION_STATUS=SEND_UNAPPROVED_REVIEW" >> $GITHUB_ENV
 
+        # Get the GitHub repository name to use it in a request.
         GITHUB_REPOSITORY=$(gh repo view $PULL_REQUEST_NUMBER --json nameWithOwner | jq .nameWithOwner -c --raw-output)
         curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
         -H "Authorization: token ${{ inputs.github-token }}" \
@@ -254,6 +267,7 @@ runs:
         # END status
         echo "ACTION_STATUS=END" >> $GITHUB_ENV
 
+        # Exit with error if the input is enabled and the verify was does not pass.
         if [[ "$VERIFIED" == 'false' && '${{ inputs.emit-error-if-verify-fail }}' == 'true' ]]; then
           exit 1;
         fi
@@ -266,10 +280,12 @@ runs:
         #!/bin/sh
         # EXIT internal status
 
+        # Full outputs with the results.
         echo "::set-output name=approved::$VERIFIED"
         echo "::set-output name=action-status::$ACTION_STATUS"
         echo "::set-output name=action-message::$ACTION_MESSAGE"
 
+        # Summary
         echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
 
     - name: Exit with error
