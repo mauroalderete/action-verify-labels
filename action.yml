@@ -89,6 +89,12 @@ runs:
           exit 1;
         fi
 
+        if [[ '${{ github.event_name }}' == 'pull_request' || '${{ github.event_name }}' == 'pull_request_target' ]]; then
+          echo "PULL_REQUEST_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV;
+        else
+          echo "PULL_REQUEST_NUMBER=${{ inputs.pull-request-number }}" >> $GITHUB_ENV;
+        fi
+
         ALL_LABELS=$(echo ${{ inputs.all }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
         NONE_LABELS=$(echo ${{ inputs.none }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
         SOME_LABELS=$(echo ${{ inputs.some }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
@@ -102,9 +108,8 @@ runs:
         # Store token in env to easy the Github CLI authorization
         echo "GITHUB_TOKEN=${{ inputs.github-token }}" >> $GITHUB_ENV
 
-    - name: Get labels from pull-request event
-      if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
-      id: labels-from-context
+    - name: Get labels from pull request
+      id: get-labels
       shell: bash
       run: |
         #!/bin/sh
@@ -112,25 +117,10 @@ runs:
         echo "ACTION_STATUS=GET_LABELS_FROM_CONTEXT" >> $GITHUB_ENV
 
         # Get labels list from github client by pull request number
-        labels=$(gh pr view ${{ github.event.pull_request.number }} --json labels | jq '[.labels[].name]' -c)
+        labels=$(gh pr view $PULL_REQUEST_NUMBER --json labels | jq '[.labels[].name]' -c)
 
         # Store the pull request labels found
         echo "LABELS=$(echo $labels)" >> $GITHUB_ENV
-
-    - name: Get labels from input
-      if: github.event_name != 'pull_request' && github.event_name != 'pull_request_target'
-      id: labels-from-api
-      shell: bash
-      run: |
-        #!/bin/sh
-        # GET_LABELS_FROM_API status
-        echo "ACTION_STATUS=GET_LABELS_FROM_API" >> $GITHUB_ENV
-        
-        # Get labels list from github client by pull request number
-        labels=$(gh pr view ${{ inputs.pull-request-number }} --json labels | jq '[.labels[].name]' -c)
-        
-        # Store the pull request labels found
-        echo "LABELS=$labels" >> $GITHUB_ENV
 
     - name: Verify all labels
       if: inputs.all != ''
@@ -205,6 +195,40 @@ runs:
           echo "VERIFIED=false" >> $GITHUB_ENV;
           echo "ACTION_MESSAGE=Extra labels. The pull request must have just one of these labels: $SOME_LABELS" >> $GITHUB_ENV;
         fi
+
+    - name: Get the last review written
+      if: inputs.request-review == 'true'
+      id: get-lastreview
+      shell: bash
+      run: |
+        lastreview=$(gh pr view 9 --json reviews | jq '[ .reviews[] | select( (.author.login == "github-actions") and (.body | startswith("${{ inputs.request-review-header }}") ) ) ] | max_by(.submittedAt)' -c)
+
+        echo "CREATE_REVIEW=false" >> $GITHUB_ENV
+
+        if [[ $(echo $lastreview | jq '.state') == "\"APPROVE\"" && "$VERIFIED" == "true" ]]; then
+          echo "CREATE_REVIEW=true" >> $GITHUB_ENV
+          exit 0;
+        fi
+        if [[ $(echo $lastreview | jq '.state') == "\"REQUEST_CHANGES\"" && "$VERIFIED" == "false" ]]; then
+          echo "CREATE_REVIEW=true" >> $GITHUB_ENV
+          exit 0;
+        fi
+
+    - name: Send approved review
+      if: inputs.request-review == 'true' && env.CREATE_REVIEW == 'true' && env.VERIFIED == 'true'
+      shell: bash
+      run: |
+        curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
+        -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+        -d '{"commit_id":"'"$GITHUB_SHA"'","body":"'"$ACTION_MESSAGE"'","event":"APPROVE"}'
+
+    - name: Send unapproved review
+      if: inputs.request-review == 'true' && env.CREATE_REVIEW == 'true' && env.VERIFIED == 'false'
+      shell: bash
+      run: |
+        curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
+        -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+        -d '{"commit_id": "'"$GITHUB_SHA"'", "body":"'"$ACTION_MESSAGE"'", "event":"REQUEST_CHANGES"}'
 
     - name: End
       id: end
