@@ -72,6 +72,7 @@ runs:
       shell: bash
       run: |
         #!/bin/sh
+        echo "::group::Validation"
         # VALIDATION status
         echo "ACTION_STATUS=VALIDATION" >> $GITHUB_ENV
         echo "ACTION_MESSAGE=" >> $GITHUB_ENV
@@ -107,11 +108,13 @@ runs:
 
         # Store token in env to easy the Github CLI authorization
         echo "GITHUB_TOKEN=${{ inputs.github-token }}" >> $GITHUB_ENV
+        echo "::endgroup::"
 
     - name: Get labels from pull request
       id: get-labels
       shell: bash
       run: |
+        echo "::group::Get labels from pull request"
         #!/bin/sh
         # GET_LABELS_FROM_CONTEXT status
         echo "ACTION_STATUS=GET_LABELS_FROM_CONTEXT" >> $GITHUB_ENV
@@ -121,6 +124,8 @@ runs:
 
         # Store the pull request labels found
         echo "LABELS=$(echo $labels)" >> $GITHUB_ENV
+
+        echo "::endgroup::"
 
     - name: Verify all labels
       if: inputs.all != ''
@@ -296,16 +301,16 @@ runs:
 
         # Summary
         echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$message\"]"
-        echo "# Verify Result" >> $GITHUB_STEP_SUMMARY
+        echo "# Verify resume" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "## Result" >> $GITHUB_STEP_SUMMARY
         echo "**Approved:** $VERIFIED" >> $GITHUB_STEP_SUMMARY
-        echo "**Send review** $CREATE_REVIEW" >> $GITHUB_STEP_SUMMARY
+        echo "**Send review:** $CREATE_REVIEW" >> $GITHUB_STEP_SUMMARY
         echo "## Action status" >> $GITHUB_STEP_SUMMARY
         echo "**Status:** $ACTION_STATUS" >> $GITHUB_STEP_SUMMARY
         echo "**Message:** $message" >> $GITHUB_STEP_SUMMARY
         echo "## Context" >> $GITHUB_STEP_SUMMARY
-        echo "**Pull request number:** $PULL_REQUEST_LABELS" >> $GITHUB_STEP_SUMMARY
+        echo "**Pull request number:** $PULL_REQUEST_NUMBER" >> $GITHUB_STEP_SUMMARY
         echo "**Labels assigned:** $labels" >> $GITHUB_STEP_SUMMARY
 
     - name: Exit with error
