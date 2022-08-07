@@ -239,7 +239,7 @@ runs:
         echo "ACTION_STATUS=SEND_APPROVED_REVIEW" >> $GITHUB_ENV
 
         # Get the GitHub repository name to use it in a request.
-        GITHUB_REPOSITORY=$(gh repo view $PULL_REQUEST_NUMBER --json nameWithOwner | jq .nameWithOwner -c --raw-output)
+        GITHUB_REPOSITORY=$(gh repo view --json nameWithOwner | jq .nameWithOwner -c --raw-output)
         curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
         -H "Authorization: token ${{ inputs.github-token }}" \
         -d '{"commit_id":"'"$GITHUB_SHA"'","body":"'"$ACTION_MESSAGE"'","event":"APPROVE"}'
@@ -254,7 +254,7 @@ runs:
         echo "ACTION_STATUS=SEND_UNAPPROVED_REVIEW" >> $GITHUB_ENV
 
         # Get the GitHub repository name to use it in a request.
-        GITHUB_REPOSITORY=$(gh repo view $PULL_REQUEST_NUMBER --json nameWithOwner | jq .nameWithOwner -c --raw-output)
+        GITHUB_REPOSITORY=$(gh repo view --json nameWithOwner | jq .nameWithOwner -c --raw-output)
         curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
         -H "Authorization: token ${{ inputs.github-token }}" \
         -d '{"commit_id": "'"$GITHUB_SHA"'", "body":"'"$ACTION_MESSAGE"'", "event":"REQUEST_CHANGES"}'
