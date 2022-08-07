@@ -25,9 +25,9 @@ jobs:
         id: action-verify-labels
         uses: ./
         with:
-          all: ''
-          none: question, wontfix, invalid
-          some: fix, feature, BREAKING CHANGE
+          all: fix, feature
+          none: ''
+          some: ''
           just-one: ''
           request-review: true
           request-review-header: '**:bookmark: verify-labels-bot**'
