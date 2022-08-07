@@ -50,7 +50,7 @@ inputs:
   emit-error-if-verify-fail:
     description: |
       The verification end with an error if the pull request not satisfy the verification.
-      If this is available and the process end without any issue, then the action-status == 'END', action-message == 'unapproved' and approved == 'false'.
+      If this is enabled and the process end without any issue, then the approved == 'false', action-status == 'END' and action-message contains a description of the reason for the fail.
       By default is true.
     required: false
     default: 'true'
@@ -152,6 +152,7 @@ runs:
         all=$(cat <(echo $LABELS | jq .[]) <(echo $ALL_LABELS | jq .[]) | sort | uniq -d | wc -l)
         if [[ $all != $itemscount ]]; then
           echo "VERIFIED=false" >> $GITHUB_ENV;
+          echo "ACTION_MESSAGE=Labels are missing. The pull request must have all these labels: $ALL_LABELS" >> $GITHUB_ENV;
         fi
 
     - name: Verify none labels
@@ -169,6 +170,7 @@ runs:
         none=$(cat <(echo $LABELS | jq .[]) <(echo $NONE_LABELS | jq .[]) | sort | uniq -d | wc -l)
         if [[ $none != 0 ]]; then
           echo "VERIFIED=false" >> $GITHUB_ENV;
+          echo "ACTION_MESSAGE=Incorrect labels. The pull request must not have any of these labels: $NONE_LABELS" >> $GITHUB_ENV;
         fi
 
     - name: Verify some labels
@@ -186,6 +188,7 @@ runs:
         some=$(cat <(echo $LABELS | jq .[]) <(echo $SOME_LABELS | jq .[]) | sort | uniq -d | wc -l)
         if [[ $some == 0 ]]; then
           echo "VERIFIED=false" >> $GITHUB_ENV;
+          echo "ACTION_MESSAGE=Missing labels. The pull request must have at least one of these labels: $SOME_LABELS" >> $GITHUB_ENV;
         fi
 
     - name: Verify just one labels
@@ -203,6 +206,7 @@ runs:
         justone=$(cat <(echo $LABELS | jq .[]) <(echo $JUST_ONE_LABELS | jq .[]) | sort | uniq -d | wc -l)
         if [[ $justone != 1 ]]; then
           echo "VERIFIED=false" >> $GITHUB_ENV;
+          echo "ACTION_MESSAGE=Extra labels. The pull request must have just one of these labels: $SOME_LABELS" >> $GITHUB_ENV;
         fi
 
     - name: End
