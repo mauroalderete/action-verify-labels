@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
     types:
-      [opened, reopened, edited, labeled, unlabeled]
+      [opened, reopened, synchronize, labeled, unlabeled]
 
 jobs:
   assign-labels:
