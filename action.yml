@@ -218,7 +218,7 @@ runs:
         fi
 
         # If the last review was APPROVE && the current state is UNAPPROVED then will updating the review is required.
-        if [[ $(echo $lastreview | jq '.state') == "\"APPROVE\"" && "$VERIFIED" == "false" ]]; then
+        if [[ $(echo $lastreview | jq '.state') == "\"APPROVED\"" && "$VERIFIED" == "false" ]]; then
           echo "CREATE_REVIEW=true" >> $GITHUB_ENV
           exit 0;
         fi
