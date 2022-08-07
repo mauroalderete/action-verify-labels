@@ -113,15 +113,6 @@ runs:
 
         # Get labels list from github client by pull request number
         labels=$(gh pr view ${{ github.event.pull_request.number }} --json labels | jq '[.labels[].name]' -c)
-        
-        # Get labels list from event context
-        tmp=$(cat << EOF
-        ${{ toJson(github.event.pull_request.labels.*.name) }}
-        EOF
-        )
-
-        echo "TMEP_LABELS $tmp"
-        echo "OTHER_LABELS $labels"
 
         # Store the pull request labels found
         echo "LABELS=$(echo $labels)" >> $GITHUB_ENV
