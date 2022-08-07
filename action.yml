@@ -110,12 +110,18 @@ runs:
         #!/bin/sh
         # GET_LABELS_FROM_CONTEXT status
         echo "ACTION_STATUS=GET_LABELS_FROM_CONTEXT" >> $GITHUB_ENV
+
+        # Get labels list from github client by pull request number
+        labels=$(gh pr view ${{ github.event.pull_request.number }} --json labels | jq '[.labels[].name]' -c)
         
         # Get labels list from event context
-        labels=$(cat << EOF
+        tmp=$(cat << EOF
         ${{ toJson(github.event.pull_request.labels.*.name) }}
         EOF
         )
+
+        echo "TMEP_LABELS $tmp"
+        echo "OTHER_LABELS $labels"
 
         # Store the pull request labels found
         echo "LABELS=$(echo $labels)" >> $GITHUB_ENV
@@ -130,7 +136,7 @@ runs:
         echo "ACTION_STATUS=GET_LABELS_FROM_API" >> $GITHUB_ENV
         
         # Get labels list from github client by pull request number
-        labels=$(gh pr view ${{ inputs.pull-request-number }} --json labels | jq '.labels[].name' -c)
+        labels=$(gh pr view ${{ inputs.pull-request-number }} --json labels | jq '[.labels[].name]' -c)
         
         # Store the pull request labels found
         echo "LABELS=$labels" >> $GITHUB_ENV
