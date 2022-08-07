@@ -286,13 +286,27 @@ runs:
         #!/bin/sh
         # EXIT internal status
 
+        message=$(echo '${{ env.ACTION_MESSAGE }}' | sed 's/"/\\"/g')
+        labels=$(echo '${{ env.LABELS }}' | sed 's/"/\\"/g')
+
         # Full outputs with the results.
         echo "::set-output name=approved::$VERIFIED"
         echo "::set-output name=action-status::$ACTION_STATUS"
-        echo "::set-output name=action-message::$ACTION_MESSAGE"
+        echo "::set-output name=action-message::$message"
 
         # Summary
-        echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
+        echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$message\"]"
+        echo "# Verify Result" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Result" >> $GITHUB_STEP_SUMMARY
+        echo "**Approved:** $VERIFIED" >> $GITHUB_STEP_SUMMARY
+        echo "**Send review** $CREATE_REVIEW" >> $GITHUB_STEP_SUMMARY
+        echo "## Action status" >> $GITHUB_STEP_SUMMARY
+        echo "**Status:** $ACTION_STATUS" >> $GITHUB_STEP_SUMMARY
+        echo "**Message:** $message" >> $GITHUB_STEP_SUMMARY
+        echo "## Context" >> $GITHUB_STEP_SUMMARY
+        echo "**Pull request number:** $PULL_REQUEST_LABELS" >> $GITHUB_STEP_SUMMARY
+        echo "**Labels assigned:** $labels" >> $GITHUB_STEP_SUMMARY
 
     - name: Exit with error
       if: ${{ failure() }}
@@ -302,5 +316,7 @@ runs:
         #!/bin/sh
         # EXIT_WITH_ERROR internal status
 
-        echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
+        message=$(echo '${{ env.ACTION_MESSAGE }}' | sed 's/"/\\"/g')
+
+        echo "::error ::[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$message\"]"
         exit 1;
