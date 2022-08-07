@@ -24,7 +24,7 @@ jobs:
         with:
           repository: mauroalderete/action-assign-labels-from-conventionals-commit
           ref: v0
-          token: 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
+          token: ${{ secrets.WORKFLOWS_TOKEN }}
           path: ./.github/actions/action-assign-labels-from-conventionals-commit
           persist-credentials: false
 
