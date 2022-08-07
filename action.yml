@@ -78,13 +78,13 @@ runs:
         echo "VERIFIED=true" >> $GITHUB_ENV
 
         # Validate pull-request-input
-        if [[ '${{ github.event_name }}' != 'pull_request' && ${{ github.event_name }}' != 'pull_request_target' && '${{ inputs.pull-request-number }}' == '' ]]; then
+        if [[ '${{ github.event_name }}' != 'pull_request' && '${{ github.event_name }}' != 'pull_request_target' && '${{ inputs.pull-request-number }}' == '' ]]; then
           echo "ACTION_MESSAGE=pull-request-number is required because the event '${{ github.event_name }}' is not a pull_request or pull_request_target event" >> $GITHUB_ENV;
           exit 1;
         fi
 
         # Validate github-token
-        if [[ '${{ inputs.request-review }}' == 'true' && '${{ inputs.github-token }}' == '' ]]; then
+        if [[ '${{ inputs.request-review }}' == 'true' && "${{ inputs.github-token }}" == "" ]]; then
           echo "ACTION_MESSAGE=github-token is required when request-review is 'true'" >> $GITHUB_ENV;
           exit 1;
         fi
@@ -198,10 +198,14 @@ runs:
 
     - name: Get the last review written
       if: inputs.request-review == 'true'
-      id: get-lastreview
+      id: get-last-review
       shell: bash
       run: |
-        lastreview=$(gh pr view 9 --json reviews | jq '[ .reviews[] | select( (.author.login == "github-actions") and (.body | startswith("${{ inputs.request-review-header }}") ) ) ] | max_by(.submittedAt)' -c)
+        #!/bin/sh
+        # GET_LAST_REVIEW status
+        echo "ACTION_STATUS=GET_LAST_REVIEW" >> $GITHUB_ENV
+
+        lastreview=$(gh pr view $PULL_REQUEST_NUMBER --json reviews | jq '[ .reviews[] | select( (.author.login == "github-actions") and (.body | startswith("${{ inputs.request-review-header }}") ) ) ] | max_by(.submittedAt)' -c)
 
         echo "CREATE_REVIEW=false" >> $GITHUB_ENV
 
@@ -216,18 +220,30 @@ runs:
 
     - name: Send approved review
       if: inputs.request-review == 'true' && env.CREATE_REVIEW == 'true' && env.VERIFIED == 'true'
+      id: send-approved-review
       shell: bash
       run: |
+        #!/bin/sh
+        # SEND_APPROVED_REVIEW status
+        echo "ACTION_STATUS=SEND_APPROVED_REVIEW" >> $GITHUB_ENV
+
+        GITHUB_REPOSITORY=$(gh repo view $PULL_REQUEST_NUMBER --json nameWithOwner | jq .nameWithOwner -c --raw-output)
         curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
-        -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+        -H "Authorization: token ${{ inputs.github-token }}" \
         -d '{"commit_id":"'"$GITHUB_SHA"'","body":"'"$ACTION_MESSAGE"'","event":"APPROVE"}'
 
     - name: Send unapproved review
       if: inputs.request-review == 'true' && env.CREATE_REVIEW == 'true' && env.VERIFIED == 'false'
+      id: send-unapproved-review
       shell: bash
       run: |
+        #!/bin/sh
+        # SEND_UNAPPROVED_REVIEW status
+        echo "ACTION_STATUS=SEND_UNAPPROVED_REVIEW" >> $GITHUB_ENV
+
+        GITHUB_REPOSITORY=$(gh repo view $PULL_REQUEST_NUMBER --json nameWithOwner | jq .nameWithOwner -c --raw-output)
         curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
-        -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+        -H "Authorization: token ${{ inputs.github-token }}" \
         -d '{"commit_id": "'"$GITHUB_SHA"'", "body":"'"$ACTION_MESSAGE"'", "event":"REQUEST_CHANGES"}'
 
     - name: End
