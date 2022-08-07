@@ -286,13 +286,29 @@ runs:
         #!/bin/sh
         # EXIT internal status
 
+        message=$(echo '${{ env.ACTION_MESSAGE }}' | sed 's/"/\\"/g')
+        labels=$(echo '${{ env.LABELS }}' | sed 's/"/\\"/g')
+        repourl=$(gh pr view $PULL_REQUEST_NUMBER --json url | jq .url -c --raw-output)
+        repotitle=$(gh pr view $PULL_REQUEST_NUMBER --json title | jq .title -c --raw-output)
+
         # Full outputs with the results.
         echo "::set-output name=approved::$VERIFIED"
         echo "::set-output name=action-status::$ACTION_STATUS"
-        echo "::set-output name=action-message::$ACTION_MESSAGE"
+        echo "::set-output name=action-message::$message"
 
         # Summary
-        echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
+        echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$message\"]"
+        echo "# Verify resume" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## $(if [[ $VERIFIED == 'true' ]]; then echo ":heavy_check_mark:"; else echo ":x:"; fi) Result" >> $GITHUB_STEP_SUMMARY
+        echo "**Approved:** $(if [[ $VERIFIED == 'true' ]]; then echo ":heavy_check_mark:"; else echo ":x:"; fi)" >> $GITHUB_STEP_SUMMARY
+        echo "**Send review:** $(if [[ $CREATE_REVIEW == 'true' ]]; then echo ":heavy_check_mark:"; else echo ":heavy_minus_sign:"; fi)" >> $GITHUB_STEP_SUMMARY
+        echo "## $(if [[ $ACTION_STATUS == 'END' && $message == '' ]]; then echo ":heavy_check_mark:"; else echo ":x:"; fi) Action status" >> $GITHUB_STEP_SUMMARY
+        echo "**Status:** $ACTION_STATUS" >> $GITHUB_STEP_SUMMARY
+        echo "**Message:** $message" >> $GITHUB_STEP_SUMMARY
+        echo "## Context" >> $GITHUB_STEP_SUMMARY
+        echo "**Pull request:** [#$PULL_REQUEST_NUMBER $repotitle]($repourl)" >> $GITHUB_STEP_SUMMARY
+        echo "**Labels assigned:** $labels" >> $GITHUB_STEP_SUMMARY
 
     - name: Exit with error
       if: ${{ failure() }}
@@ -302,5 +318,7 @@ runs:
         #!/bin/sh
         # EXIT_WITH_ERROR internal status
 
-        echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
+        message=$(echo '${{ env.ACTION_MESSAGE }}' | sed 's/"/\\"/g')
+
+        echo "::error ::[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$message\"]"
         exit 1;

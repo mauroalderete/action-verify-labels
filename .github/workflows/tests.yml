@@ -32,3 +32,4 @@ jobs:
           request-review: true
           request-review-header: '**:bookmark: verify-labels-bot**'
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          emit-error-if-verify-fail: true
