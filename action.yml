@@ -44,7 +44,7 @@ inputs:
   pull-request-number:
     description: |
       The pull request number to verify.
-      Only is required if this action isn't run on a pull_request event.
+      Only is required if this action isn't run on a pull_request event or pull_request_target event.
     required: false
     default: ''
   emit-error-if-verify-fail:
@@ -78,8 +78,8 @@ runs:
         echo "VERIFIED=true" >> $GITHUB_ENV
 
         # Validate pull-request-input
-        if [[ '${{ github.event_name }}' != 'pull_request' && '${{ inputs.pull-request-number }}' == '' ]]; then
-          echo "ACTION_MESSAGE=pull-request-number is required because the event '${{ github.event_name }}' is not a pull_request event" >> $GITHUB_ENV;
+        if [[ '${{ github.event_name }}' != 'pull_request' && ${{ github.event_name }}' != 'pull_request_target' && '${{ inputs.pull-request-number }}' == '' ]]; then
+          echo "ACTION_MESSAGE=pull-request-number is required because the event '${{ github.event_name }}' is not a pull_request or pull_request_target event" >> $GITHUB_ENV;
           exit 1;
         fi
 
@@ -103,7 +103,7 @@ runs:
         echo "GITHUB_TOKEN=${{ inputs.github-token }}" >> $GITHUB_ENV
 
     - name: Get labels from pull-request event
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
       id: labels-from-context
       shell: bash
       run: |
@@ -118,7 +118,7 @@ runs:
         echo "LABELS=$(echo $labels)" >> $GITHUB_ENV
 
     - name: Get labels from input
-      if: github.event_name != 'pull_request'
+      if: github.event_name != 'pull_request' && github.event_name != 'pull_request_target'
       id: labels-from-api
       shell: bash
       run: |
