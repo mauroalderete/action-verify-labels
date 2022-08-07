@@ -221,12 +221,6 @@ runs:
           exit 1;
         fi
 
-        echo "all: $ALL_LABELS"
-        echo "none: $NONE_LABELS"
-        echo "some: $SOME_LABELS"
-        echo "just-one: $JUST_ONE_LABELS"
-        echo "labels: $LABELS"
-
     - name: Exit
       if: ${{ always() }}
       id: exit

@@ -53,8 +53,9 @@ jobs:
 
   verify-labels:
     runs-on: ubuntu-latest
-    name: Assign labels from conventional-commits
+    name: Verify labels
     needs: assign-labels
+    if: needs.assign-labels.outputs.labels-assigned != '[]' || needs.assign-labels.outputs.labels-removed != '[]'
     steps:
       - uses: actions/checkout@v3
         with:
@@ -62,7 +63,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Verify labels
-        if: steps.action-assign-labels.outputs.labels-assigned != '[]' || steps.action-assign-labels.outputs.labels-removed != '[]'
         id: action-verify-labels
         uses: ./
         with:
