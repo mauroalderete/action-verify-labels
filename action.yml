@@ -288,6 +288,8 @@ runs:
 
         message=$(echo '${{ env.ACTION_MESSAGE }}' | sed 's/"/\\"/g')
         labels=$(echo '${{ env.LABELS }}' | sed 's/"/\\"/g')
+        repourl=$(gh pr view $PULL_REQUEST_NUMBER --json url | jq .url -c --raw-output)
+        repotitle=$(gh pr view $PULL_REQUEST_NUMBER --json title | jq .title -c --raw-output)
 
         # Full outputs with the results.
         echo "::set-output name=approved::$VERIFIED"
@@ -305,7 +307,7 @@ runs:
         echo "**Status:** $ACTION_STATUS" >> $GITHUB_STEP_SUMMARY
         echo "**Message:** $message" >> $GITHUB_STEP_SUMMARY
         echo "## Context" >> $GITHUB_STEP_SUMMARY
-        echo "**Pull request number:** $PULL_REQUEST_NUMBER" >> $GITHUB_STEP_SUMMARY
+        echo "**Pull request:** [#$PULL_REQUEST_NUMBER $repotitle]($repourl)" >> $GITHUB_STEP_SUMMARY
         echo "**Labels assigned:** $labels" >> $GITHUB_STEP_SUMMARY
 
     - name: Exit with error
