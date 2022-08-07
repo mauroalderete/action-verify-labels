@@ -240,9 +240,12 @@ runs:
 
         # Get the GitHub repository name to use it in a request.
         GITHUB_REPOSITORY=$(gh repo view --json nameWithOwner | jq .nameWithOwner -c --raw-output)
+        # Make body message
+        body=$(echo '${{ inputs.request-review-header }} All labels are OK in this pull request' | sed 's/"/\\"/g')
+
         curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
         -H "Authorization: token ${{ inputs.github-token }}" \
-        -d '{"commit_id":"'"$GITHUB_SHA"'","body":"${{ inputs.request-review-header }} All labels are OK in this pull request.","event":"APPROVE"}'
+        -d '{"commit_id":"'"$GITHUB_SHA"'","body":"'"$body"'","event":"APPROVE"}'
 
     - name: Send unapproved review
       if: inputs.request-review == 'true' && env.CREATE_REVIEW == 'true' && env.VERIFIED == 'false'
@@ -255,9 +258,12 @@ runs:
 
         # Get the GitHub repository name to use it in a request.
         GITHUB_REPOSITORY=$(gh repo view --json nameWithOwner | jq .nameWithOwner -c --raw-output)
+        # Make body message
+        body=$(echo '${{ inputs.request-review-header }} ${{ env.ACTION_MESSAGE }}' | sed 's/"/\\"/g')
+
         curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
         -H "Authorization: token ${{ inputs.github-token }}" \
-        -d '{"commit_id": "'"$GITHUB_SHA"'", "body":"${{ inputs.request-review-header }} '"$ACTION_MESSAGE"'", "event":"REQUEST_CHANGES"}'
+        -d '{"commit_id": "'"$GITHUB_SHA"'", "body":"'"$body"'", "event":"REQUEST_CHANGES"}'
 
     - name: End
       id: end
