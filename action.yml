@@ -1,0 +1,244 @@
+name: 'Verify Labels in Pull Request '
+description: 'It verifies that the pull request has the expected labels'
+inputs:
+  all:
+    description: | 
+      List of the labels.
+      The pull request must be assigned with all of these labels listed.
+    required: false
+    default: ''
+  none:
+    description: | 
+      List of the labels.
+      The pull request must not be assigned with any of these labels listed.
+    required: false
+    default: ''
+  some:
+    description: | 
+      List of the labels.
+      The pull request must be assigned with one or more of these labels listed.
+    required: false
+    default: ''
+  just-one:
+    description: | 
+      List of the labels.
+      The pull request must be assigned only one of these labels listed.
+    required: false
+    default: ''
+  request-review:
+    description: | 
+      Boolean flag. False by default.
+      Should send a request review to notify whether the pull request passed or not this verification.
+    required: false
+    default: 'true'
+  request-review-header:
+    description: |
+      A string that is attached to the beginning of the review comment.
+      Supports GitHub Flavored Markdown.
+    required: false
+    default: 'true'
+  github-token:
+    description: 'The Github token. Only is required if request-review == true.'
+    required: false
+    default: ''
+  pull-request-number:
+    description: |
+      The pull request number to verify.
+      Only is required if this action isn't run on a pull_request event or pull_request_target event.
+    required: false
+    default: ''
+  emit-error-if-verify-fail:
+    description: |
+      The verification end with an error if the pull request not satisfy the verification.
+      If this is enabled and the process end without any issue, then the approved == 'false', action-status == 'END' and action-message contains a description of the reason for the fail.
+      By default is true.
+    required: false
+    default: 'true'
+outputs:
+  approved:
+    description: 'Boolean that indicates if the pull request approved this verification or not.'
+    value: ${{ steps.exit.outputs.approved }}
+  action-status:
+    description: 'Execution status of the action'
+    value: ${{ steps.exit.outputs.action-status }}
+  action-message:
+    description: 'Message associated to the current status of the action'
+    value: ${{ steps.exit.outputs.action-message }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Validation
+      id: validation
+      shell: bash
+      run: |
+        #!/bin/sh
+        # VALIDATION status
+        echo "ACTION_STATUS=VALIDATION" >> $GITHUB_ENV
+        echo "ACTION_MESSAGE=" >> $GITHUB_ENV
+        echo "VERIFIED=true" >> $GITHUB_ENV
+
+        # Validate pull-request-input
+        if [[ '${{ github.event_name }}' != 'pull_request' && ${{ github.event_name }}' != 'pull_request_target' && '${{ inputs.pull-request-number }}' == '' ]]; then
+          echo "ACTION_MESSAGE=pull-request-number is required because the event '${{ github.event_name }}' is not a pull_request or pull_request_target event" >> $GITHUB_ENV;
+          exit 1;
+        fi
+
+        # Validate github-token
+        if [[ '${{ inputs.request-review }}' == 'true' && '${{ inputs.github-token }}' == '' ]]; then
+          echo "ACTION_MESSAGE=github-token is required when request-review is 'true'" >> $GITHUB_ENV;
+          exit 1;
+        fi
+
+        ALL_LABELS=$(echo ${{ inputs.all }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
+        NONE_LABELS=$(echo ${{ inputs.none }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
+        SOME_LABELS=$(echo ${{ inputs.some }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
+        JUST_ONE_LABELS=$(echo ${{ inputs.just-one }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
+
+        echo "ALL_LABELS=$ALL_LABELS" >> $GITHUB_ENV
+        echo "NONE_LABELS=$NONE_LABELS" >> $GITHUB_ENV
+        echo "SOME_LABELS=$SOME_LABELS" >> $GITHUB_ENV
+        echo "JUST_ONE_LABELS=$JUST_ONE_LABELS" >> $GITHUB_ENV
+
+        # Store token in env to easy the Github CLI authorization
+        echo "GITHUB_TOKEN=${{ inputs.github-token }}" >> $GITHUB_ENV
+
+    - name: Get labels from pull-request event
+      if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+      id: labels-from-context
+      shell: bash
+      run: |
+        #!/bin/sh
+        # GET_LABELS_FROM_CONTEXT status
+        echo "ACTION_STATUS=GET_LABELS_FROM_CONTEXT" >> $GITHUB_ENV
+
+        # Get labels list from github client by pull request number
+        labels=$(gh pr view ${{ github.event.pull_request.number }} --json labels | jq '[.labels[].name]' -c)
+
+        # Store the pull request labels found
+        echo "LABELS=$(echo $labels)" >> $GITHUB_ENV
+
+    - name: Get labels from input
+      if: github.event_name != 'pull_request' && github.event_name != 'pull_request_target'
+      id: labels-from-api
+      shell: bash
+      run: |
+        #!/bin/sh
+        # GET_LABELS_FROM_API status
+        echo "ACTION_STATUS=GET_LABELS_FROM_API" >> $GITHUB_ENV
+        
+        # Get labels list from github client by pull request number
+        labels=$(gh pr view ${{ inputs.pull-request-number }} --json labels | jq '[.labels[].name]' -c)
+        
+        # Store the pull request labels found
+        echo "LABELS=$labels" >> $GITHUB_ENV
+
+    - name: Verify all labels
+      if: inputs.all != ''
+      id: verify-all
+      shell: bash
+      run: |
+        #!/bin/sh
+        # VERIFY_ALL_LABELS status
+        echo "ACTION_STATUS=VERIFY_ALL_LABELS" >> $GITHUB_ENV
+
+        itemscount=$(echo $ALL_LABELS | jq .[] | wc -l)
+
+        # Concatenate the current labels list with the 'all labels' list and get duplicated items.
+        # If the count of duplicated items is different to the count of items in 'all labels' list, the pull request is not verified.
+        # Expected that the count of the items in the result to be equal to the count of items in 'all labels' list.
+        all=$(cat <(echo $LABELS | jq .[]) <(echo $ALL_LABELS | jq .[]) | sort | uniq -d | wc -l)
+        if [[ $all != $itemscount ]]; then
+          echo "VERIFIED=false" >> $GITHUB_ENV;
+          echo "ACTION_MESSAGE=Labels are missing. The pull request must have all these labels: $ALL_LABELS" >> $GITHUB_ENV;
+        fi
+
+    - name: Verify none labels
+      if: inputs.none != ''
+      id: verify-none
+      shell: bash
+      run: |
+        #!/bin/sh
+        # VERIFY_NONE_LABELS status
+        echo "ACTION_STATUS=VERIFY_NONE_LABELS" >> $GITHUB_ENV
+
+        # Concatenate the current labels list with the 'none labels' list and get duplicated items.
+        # If there is at least one duplicate item, the pull request is not verified.
+        # Expected that the result is empty.
+        none=$(cat <(echo $LABELS | jq .[]) <(echo $NONE_LABELS | jq .[]) | sort | uniq -d | wc -l)
+        if [[ $none != 0 ]]; then
+          echo "VERIFIED=false" >> $GITHUB_ENV;
+          echo "ACTION_MESSAGE=Incorrect labels. The pull request must not have any of these labels: $NONE_LABELS" >> $GITHUB_ENV;
+        fi
+
+    - name: Verify some labels
+      if: inputs.some != ''
+      id: verify-some
+      shell: bash
+      run: |
+        #!/bin/sh
+        # VERIFY_SOME_LABELS status
+        echo "ACTION_STATUS=VERIFY_SOME_LABELS" >> $GITHUB_ENV
+
+        # Concatenate the current labels list with the 'some labels' list and get duplicated items.
+        # If there is not any duplicate item, the pull request is not verified.
+        # Expected at least one item the 'some labels' list in the result.
+        some=$(cat <(echo $LABELS | jq .[]) <(echo $SOME_LABELS | jq .[]) | sort | uniq -d | wc -l)
+        if [[ $some == 0 ]]; then
+          echo "VERIFIED=false" >> $GITHUB_ENV;
+          echo "ACTION_MESSAGE=Missing labels. The pull request must have at least one of these labels: $SOME_LABELS" >> $GITHUB_ENV;
+        fi
+
+    - name: Verify just one labels
+      if: inputs.just-one != ''
+      id: verify-just-one
+      shell: bash
+      run: |
+        #!/bin/sh
+        # VERIFY_JUST_ONE_LABELS status
+        echo "ACTION_STATUS=VERIFY_JUST_ONE_LABELS" >> $GITHUB_ENV
+
+        # Concatenate the current labels list with the 'just one labels' list and get duplicated items.
+        # If there is more of one, or there is not any item duplicated, the pull request is not verified.
+        # Expected just one item the 'just one labels' list in the result.
+        justone=$(cat <(echo $LABELS | jq .[]) <(echo $JUST_ONE_LABELS | jq .[]) | sort | uniq -d | wc -l)
+        if [[ $justone != 1 ]]; then
+          echo "VERIFIED=false" >> $GITHUB_ENV;
+          echo "ACTION_MESSAGE=Extra labels. The pull request must have just one of these labels: $SOME_LABELS" >> $GITHUB_ENV;
+        fi
+
+    - name: End
+      id: end
+      shell: bash
+      run: |
+        #!/bin/sh
+        # END status
+        echo "ACTION_STATUS=END" >> $GITHUB_ENV
+
+        if [[ "$VERIFIED" == 'false' && '${{ inputs.emit-error-if-verify-fail }}' == 'true' ]]; then
+          exit 1;
+        fi
+
+    - name: Exit
+      if: ${{ always() }}
+      id: exit
+      shell: bash
+      run: |
+        #!/bin/sh
+        # EXIT internal status
+
+        echo "::set-output name=approved::$VERIFIED"
+        echo "::set-output name=action-status::$ACTION_STATUS"
+        echo "::set-output name=action-message::$ACTION_MESSAGE"
+
+        echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
+
+    - name: Exit with error
+      if: ${{ failure() }}
+      id: exit-with-error
+      shell: bash
+      run: |
+        #!/bin/sh
+        # EXIT_WITH_ERROR internal status
+
+        echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
+        exit 1;

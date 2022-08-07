@@ -1,0 +1,34 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    types:
+      [opened, reopened, labeled, unlabeled]
+
+jobs:
+  test:
+    name: Test verify labels assigned
+    if: github.event.pull_request.merged == false
+    runs-on: ubuntu-latest
+    outputs:
+      approved: ${{ steps.scan-labels.outputs.approved }}
+      message: ${{ steps.scan-labels.outputs.message }}
+      create-review: ${{ steps.get-lastreview.outputs.create-review }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Execute verify labels
+        id: action-verify-labels
+        uses: ./
+        with:
+          all: ''
+          none: duplicate, invalid, question, wontfix
+          some: fix, feature, BREAKING CHANGE
+          just-one: ''
+          request-review: true
+          request-review-header: '**:bookmark: verify-labels-bot**'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
