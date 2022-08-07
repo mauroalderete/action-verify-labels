@@ -72,7 +72,7 @@ runs:
       shell: bash
       run: |
         #!/bin/sh
-        # Update action status
+        # VALIDATION status
         echo "ACTION_STATUS=VALIDATION" >> $GITHUB_ENV
         echo "ACTION_MESSAGE=" >> $GITHUB_ENV
         echo "VERIFIED=true" >> $GITHUB_ENV
@@ -108,7 +108,7 @@ runs:
       shell: bash
       run: |
         #!/bin/sh
-        # Update action status
+        # GET_LABELS_FROM_CONTEXT status
         echo "ACTION_STATUS=GET_LABELS_FROM_CONTEXT" >> $GITHUB_ENV
         
         # Get labels list from event context
@@ -126,7 +126,7 @@ runs:
       shell: bash
       run: |
         #!/bin/sh
-        # Update action status
+        # GET_LABELS_FROM_API status
         echo "ACTION_STATUS=GET_LABELS_FROM_API" >> $GITHUB_ENV
         
         # Get labels list from github client by pull request number
@@ -140,7 +140,8 @@ runs:
       id: verify-all
       shell: bash
       run: |
-        # Update action status
+        #!/bin/sh
+        # VERIFY_ALL_LABELS status
         echo "ACTION_STATUS=VERIFY_ALL_LABELS" >> $GITHUB_ENV
 
         itemscount=$(echo $ALL_LABELS | jq .[] | wc -l)
@@ -158,7 +159,8 @@ runs:
       id: verify-none
       shell: bash
       run: |
-        # Update action status
+        #!/bin/sh
+        # VERIFY_NONE_LABELS status
         echo "ACTION_STATUS=VERIFY_NONE_LABELS" >> $GITHUB_ENV
 
         # Concatenate the current labels list with the 'none labels' list and get duplicated items.
@@ -174,23 +176,25 @@ runs:
       id: verify-some
       shell: bash
       run: |
-        # Update action status
+        #!/bin/sh
+        # VERIFY_SOME_LABELS status
         echo "ACTION_STATUS=VERIFY_SOME_LABELS" >> $GITHUB_ENV
 
         # Concatenate the current labels list with the 'some labels' list and get duplicated items.
         # If there is not any duplicate item, the pull request is not verified.
         # Expected at least one item the 'some labels' list in the result.
         some=$(cat <(echo $LABELS | jq .[]) <(echo $SOME_LABELS | jq .[]) | sort | uniq -d | wc -l)
-        if [[ $some != 0 ]]; then
+        if [[ $some == 0 ]]; then
           echo "VERIFIED=false" >> $GITHUB_ENV;
         fi
 
-    - name: Verify all labels
+    - name: Verify just one labels
       if: inputs.just-one != ''
       id: verify-just-one
       shell: bash
       run: |
-        # Update action status
+        #!/bin/sh
+        # VERIFY_JUST_ONE_LABELS status
         echo "ACTION_STATUS=VERIFY_JUST_ONE_LABELS" >> $GITHUB_ENV
 
         # Concatenate the current labels list with the 'just one labels' list and get duplicated items.
@@ -206,9 +210,10 @@ runs:
       shell: bash
       run: |
         #!/bin/sh
+        # END status
         echo "ACTION_STATUS=END" >> $GITHUB_ENV
 
-        if [[ '$VERIFIED' == 'false' && '${{ inputs.emit-error-if-verify-fail }}' == 'true' ]]; then
+        if [[ "$VERIFIED" == 'false' && '${{ inputs.emit-error-if-verify-fail }}' == 'true' ]]; then
           echo "ACTION_MESSAGE=unapproved" >> $GITHUB_ENV;
           exit 1;
         fi
@@ -224,14 +229,22 @@ runs:
       id: exit
       shell: bash
       run: |
+        #!/bin/sh
+        # EXIT internal status
+
         echo "::set-output name=approved::$VERIFIED"
         echo "::set-output name=action-status::$ACTION_STATUS"
         echo "::set-output name=action-message::$ACTION_MESSAGE"
+
+        echo "[\"result\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
 
     - name: Exit with error
       if: ${{ failure() }}
       id: exit-with-error
       shell: bash
       run: |
-        echo "$ACTION_STATUS, $ACTION_MESSAGE"
+        #!/bin/sh
+        # EXIT_WITH_ERROR internal status
+
+        echo "[\"result\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$ACTION_MESSAGE\"]"
         exit 1;

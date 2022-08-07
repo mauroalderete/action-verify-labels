@@ -25,10 +25,10 @@ jobs:
         id: action-verify-labels
         uses: ./
         with:
-          all: fix, feature
+          all: ''
           none: ''
           some: ''
-          just-one: ''
+          just-one: bug, feature
           request-review: true
           request-review-header: '**:bookmark: verify-labels-bot**'
           github-token: ${{ secrets.GITHUB_TOKEN }}
