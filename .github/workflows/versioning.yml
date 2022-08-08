@@ -65,6 +65,9 @@ jobs:
         if: github.event.head_commit.committer.username != 'web-flow'
         run: |
           #!/bin/sh
+
+          echo "::warning ::There were no pull requests associated with the commits included in this release. Automatically-generated notes were not generated."
+
           # The last commit was not committed by GitHub.
           # We assume that the push event come directly.
           gh release create ${{ steps.semver.outputs.next }} \
