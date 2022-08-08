@@ -22,15 +22,15 @@ jobs:
 
       - uses: actions/checkout@v3
         with:
-          repository: mauroalderete/action-assign-labels-from-conventionals-commit
+          repository: mauroalderete/action-assign-labels
           ref: v0
           token: ${{ secrets.WORKFLOWS_TOKEN }}
-          path: ./.github/actions/action-assign-labels-from-conventionals-commit
+          path: ./.github/actions/action-assign-labels
           persist-credentials: false
 
       - name: Execute assign labels
         id: action-assign-labels
-        uses: ./.github/actions/action-assign-labels-from-conventionals-commit
+        uses: ./.github/actions/action-assign-labels
         with:
           pull-request-number: ${{ github.event.pull_request.number }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
