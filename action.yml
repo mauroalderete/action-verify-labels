@@ -30,13 +30,13 @@ inputs:
       Boolean flag. False by default.
       Should send a request review to notify whether the pull request passed or not this verification.
     required: false
-    default: 'true'
+    default: 'false'
   request-review-header:
     description: |
       A string that is attached to the beginning of the review comment.
       Supports GitHub Flavored Markdown.
     required: false
-    default: 'true'
+    default: ''
   github-token:
     description: 'The Github token. Only is required if request-review == true.'
     required: false
