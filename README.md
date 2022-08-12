@@ -38,7 +38,6 @@ Check the labels before merging is especially useful when you use [Automatically
 
 Furthermore, `action-verify-labels` can help you to protect your branches of the pull request that don't must be merged, combining labels and [rules branch](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/managing-a-branch-protection-rule) feature.
 
-&nbsp;
 # :fire: Features
 
 ### Match labels with four quantifiers
@@ -62,7 +61,6 @@ You can enable the sending a request review to developers participant of the pul
 
 `action-verify-labels` generate a friendly summary to that you can see speedily the operation result, pull request associated and end status.
 
-&nbsp;
 # :computer: How to use `action-verify-labels`
 
 Simply add a checkout to your repository. Then, add a new step in your workflow using the `mauroalderete/action-verify-labels` action. And ready, you can start to configure it with the labels list that you wish to verify. [See examples](#examples)
@@ -218,7 +216,6 @@ The review header content can be any string UTF-8 and Support [GitHub Flavored M
 
 > Please, feel free to write any question, suggestion or issue using creating a [`new issue`](https://github.com/mauroalderete/action-verify-labels/issues/new/choose).
 
-&nbsp;
 # :building_construction: How to Set up `action-verify-labels` for Development?
 
 You set up `action-verify-labels` locally with a few easy steps.
@@ -235,7 +232,6 @@ git clone https://github.com/mauroalderete/action-verify-labels
 cd action-verify-labels
 ```
 
-&nbsp;
 # :hamburger: How to work
 
 The action runs on ubuntu runner as composite action, so that it has available all cli tools ready for use.
@@ -255,12 +251,10 @@ If you have any questions, felt you free to make a comment through a [issue](htt
 
 If you want to improve `action-verify-labels` o simply report a bug, please check the [contributing](#handshake-contributing-to-action-verify-labels) section to know how to do it.
 
-&nbsp;
 # :shield: License
 
 This project is licensed under the MIT License - see the [`LICENSE`](LICENSE) file for details.
 
-&nbsp;
 # :handshake: Contributing to `action-verify-labels`
 
 Any kind of positive contribution is welcome! Please help us to grow by contributing to the project.
@@ -269,14 +263,12 @@ If you wish to contribute, you can work on any [issue](https://github.com/mauroa
 
 > Please read [`CONTRIBUTING`](CONTRIBUTING.md) for details on our [`CODE OF CONDUCT`](CODE_OF_CONDUCT.md), and the process for submitting pull requests to us.
 
-&nbsp;
 # :pray: Support
 
 We all need support and motivation. `action-verify-labels` is not an exception. Please give this project a :star: start to encourage and show that you liked it. Don't forget to leave a :star: star before you move away.
 
 If you found the app helpful, consider supporting us with a coffee.
 
-&nbsp;
 <div align="center">
 <a href='https://cafecito.app/mauroalderete' rel='noopener' target='_blank'><img srcset='https://cdn.cafecito.app/imgs/buttons/button_6.png 1x, https://cdn.cafecito.app/imgs/buttons/button_6_2x.png 2x, https://cdn.cafecito.app/imgs/buttons/button_6_3.75x.png 3.75x' src='https://cdn.cafecito.app/imgs/buttons/button_6.png' alt='Invitame un café en cafecito.app' /></a>
 </div>
