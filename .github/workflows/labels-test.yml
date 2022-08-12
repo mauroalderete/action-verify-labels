@@ -73,7 +73,7 @@ jobs:
         uses: ./
         with:
           none: question, wontfix, invalid
-          some: bug, feature, BREAKING CHANGE
+          some: bug, feature, BREAKING CHANGE, documentation, build, config
           request-review: true
           request-review-header: '**:bookmark: verify-labels-action**'
           github-token: ${{ secrets.GITHUB_TOKEN }}
