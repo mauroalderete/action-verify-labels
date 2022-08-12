@@ -1,5 +1,6 @@
 name: 'Verify Labels in Pull Request '
 description: 'It verifies that the pull request has the expected labels'
+author: Mauro Alderete
 inputs:
   all:
     description: | 
@@ -322,3 +323,7 @@ runs:
 
         echo "::error ::[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$message\"]"
         exit 1;
+
+branding:
+  icon: 'check-square'
+  color: 'orange'
