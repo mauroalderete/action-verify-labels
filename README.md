@@ -214,7 +214,7 @@ The review header content can be any string UTF-8 and Support [GitHub Flavored M
 
 > Additional, ```request-review-header``` value is used by `action-verify-labels` to identify the last review sent. I recommend completing it if you use other actions that create request revisions.
 
-> Please, feel free to write any question, suggestion or issue using creating a [`new issue`](https://github.com/mauroalderete/action-verify-labels/issues/new/choose).
+Please, feel free to write any question, suggestion or issue using creating a [`new issue`](https://github.com/mauroalderete/action-verify-labels/issues/new/choose).
 
 # :building_construction: How to Set up `action-verify-labels` for Development?
 
