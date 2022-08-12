@@ -41,24 +41,24 @@ Furthermore, `action-verify-labels` can help you to protect your branches of the
 &nbsp;
 # :fire: Features
 
-## Match labels with four quantifiers
+### Match labels with four quantifiers
 
 You can use ```all```, ```none```, ```some```, ```just-one``` inputs to configure the labels that you want to verify in a pull request.
 
-## Ending with error or successful customisable
+### Ending with error or successful customisable
 
 Using ```emit-error-if-verify-fail``` input you can choose if `action-verify-labels` end with execution error or successful according to need.
 It allows you to available a simple way to handle workflow running.
 
-## Send request review
+### Send request review
 
 You can enable the sending a request review to developers participant of the pull request when the verification is passed or not.
 
-## Status API
+### Status API
 
 `action-verify-labels` provide the ```action-status``` and ```action-message``` outputs to notify you about any error event during the execution. In this way, you can take a better decision.
 
-## Summary
+### Summary
 
 `action-verify-labels` generate a friendly summary to that you can see speedily the operation result, pull request associated and end status.
 
