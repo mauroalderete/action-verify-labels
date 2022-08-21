@@ -29,7 +29,7 @@ jobs:
             conventional-commits:
               - type: 'fix'
                 nouns: ['FIX', 'Fix', 'fix', 'FIXED', 'Fixed', 'fixed']
-                labels: ['bug']
+                labels: ['fix']
               - type: 'feature'
                 nouns: ['FEATURE', 'Feature', 'feature', 'FEAT', 'Feat', 'feat']
                 labels: ['feature']
@@ -38,20 +38,20 @@ jobs:
                 labels: ['BREAKING CHANGE']
               - type: 'documentation'
                 nouns: ['doc','docu','document','documentation']
-                labels: ['documentation', 'bug']
+                labels: ['documentation', 'fix']
               - type: 'build'
                 nouns: ['build','rebuild']
-                labels: ['build', 'bug']
+                labels: ['build', 'fix']
               - type: 'config'
                 nouns: ['config', 'conf', 'cofiguration', 'configure']
-                labels: ['config', 'bug']
+                labels: ['config', 'fix']
 
       - name: Verify labels
         id: action-verify-labels
         uses: ./
         with:
           none: question, wontfix, invalid
-          some: bug, feature, BREAKING CHANGE, documentation, build, config
+          some: fix, feature, BREAKING CHANGE, documentation, build, config
           request-review: true
           request-review-header: '**:bookmark: verify-labels-action**'
           github-token: ${{ secrets.GITHUB_TOKEN }}
