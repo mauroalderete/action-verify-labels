@@ -7,7 +7,7 @@ on:
       [opened, reopened, synchronize, labeled, unlabeled]
 
 jobs:
-  test-labels:
+  labels-test:
     name: Assign and test labels from conventional-commits
     if: github.event.pull_request.merged == false
     runs-on: ubuntu-latest
@@ -38,13 +38,13 @@ jobs:
                 labels: ['BREAKING CHANGE']
               - type: 'documentation'
                 nouns: ['doc','docu','document','documentation']
-                labels: ['documentation']
+                labels: ['documentation', 'bug']
               - type: 'build'
                 nouns: ['build','rebuild']
-                labels: ['build']
+                labels: ['build', 'bug']
               - type: 'config'
                 nouns: ['config', 'conf', 'cofiguration', 'configure']
-                labels: ['config']
+                labels: ['config', 'bug']
 
       - name: Verify labels
         id: action-verify-labels
