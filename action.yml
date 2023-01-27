@@ -293,9 +293,9 @@ runs:
         repotitle=$(gh pr view $PULL_REQUEST_NUMBER --json title | jq .title -c --raw-output)
 
         # Full outputs with the results.
-        echo "::set-output name=approved::$VERIFIED"
-        echo "::set-output name=action-status::$ACTION_STATUS"
-        echo "::set-output name=action-message::$message"
+        echo "approved=$VERIFIED" >> $GITHUB_OUTPUT
+        echo "action-status=$ACTION_STATUS" >> $GITHUB_OUTPUT
+        echo "action-message=$message" >> $GITHUB_OUTPUT
 
         # Summary
         echo "[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$message\"]"
