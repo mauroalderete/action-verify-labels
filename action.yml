@@ -71,6 +71,15 @@ runs:
     - name: Validation
       id: validation
       shell: bash
+      env:
+        GITHUB_EVENT_NAME: '${{ github.event.name }}'
+        GITHUB_EVENT_PULL_REQUEST_NUMBER: '${{ github.event.pull_request.number }}'
+        INPUTS_ALL: '${{ inputs.all }}'
+        INPUTS_JUST_ONE: '${{ inputs.just-one }}'
+        INPUTS_NONE: '${{ inputs.none }}'
+        INPUTS_PULL_REQUEST_NUMBER: '${{ inputs.pull_request.number }}'
+        INPUTS_REQUEST_REVIEW: '${{ inputs.request-review }}'
+        INPUTS_SOME: '${{ inputs.some }}'
       run: |
         #!/bin/sh
         # VALIDATION status
@@ -79,35 +88,32 @@ runs:
         echo "VERIFIED=true" >> $GITHUB_ENV
 
         # Validate pull-request-input
-        if [[ '${{ github.event_name }}' != 'pull_request' && '${{ github.event_name }}' != 'pull_request_target' && '${{ inputs.pull-request-number }}' == '' ]]; then
-          echo "ACTION_MESSAGE=pull-request-number is required because the event '${{ github.event_name }}' is not a pull_request or pull_request_target event" >> $GITHUB_ENV;
+        if [[ "$GITHUB_EVENT_NAME" != 'pull_request' && "$GITHUB_EVENT_NAME" != 'pull_request_target' && "$INPUTS_PULL_REQUEST_NUMBER" == '' ]]; then
+          echo "ACTION_MESSAGE=pull-request-number is required because the event "$GITHUB_EVENT_NAME" is not a pull_request or pull_request_target event" >> $GITHUB_ENV;
           exit 1;
         fi
 
         # Validate github-token
-        if [[ '${{ inputs.request-review }}' == 'true' && "${{ inputs.github-token }}" == "" ]]; then
+        if [[ $INPUTS_REQUEST_REVIEW == 'true' && '${{ inputs.github-token }}' == "" ]]; then
           echo "ACTION_MESSAGE=github-token is required when request-review is 'true'" >> $GITHUB_ENV;
           exit 1;
         fi
 
-        if [[ '${{ github.event_name }}' == 'pull_request' || '${{ github.event_name }}' == 'pull_request_target' ]]; then
-          echo "PULL_REQUEST_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV;
+        if [[ "$GITHUB_EVENT_NAME" == 'pull_request' || "$GITHUB_EVENT_NAME" == 'pull_request_target' ]]; then
+          echo "PULL_REQUEST_NUMBER=$GITHUB_EVENT_PULL_REQUEST_NUMBER" >> $GITHUB_ENV;
         else
-          echo "PULL_REQUEST_NUMBER=${{ inputs.pull-request-number }}" >> $GITHUB_ENV;
+          echo "PULL_REQUEST_NUMBER=$INPUTS_PULL_REQUEST_NUMBER" >> $GITHUB_ENV;
         fi
 
-        ALL_LABELS=$(echo ${{ inputs.all }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
-        NONE_LABELS=$(echo ${{ inputs.none }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
-        SOME_LABELS=$(echo ${{ inputs.some }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
-        JUST_ONE_LABELS=$(echo ${{ inputs.just-one }} | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
+        ALL_LABELS=$(echo $INPUTS_ALL | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
+        NONE_LABELS=$(echo $INPUTS_NONE | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
+        SOME_LABELS=$(echo $INPUTS_SOME | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
+        JUST_ONE_LABELS=$(echo $INPUTS_JUST_ONE | sed 's/, /\", \"/g' | awk '{ print "[\""$0"\"]"}')
 
         echo "ALL_LABELS=$ALL_LABELS" >> $GITHUB_ENV
         echo "NONE_LABELS=$NONE_LABELS" >> $GITHUB_ENV
         echo "SOME_LABELS=$SOME_LABELS" >> $GITHUB_ENV
         echo "JUST_ONE_LABELS=$JUST_ONE_LABELS" >> $GITHUB_ENV
-
-        # Store token in env to easy the Github CLI authorization
-        echo "GITHUB_TOKEN=${{ inputs.github-token }}" >> $GITHUB_ENV
 
     - name: Get labels from pull request
       id: get-labels
@@ -118,7 +124,7 @@ runs:
         echo "ACTION_STATUS=GET_LABELS_FROM_CONTEXT" >> $GITHUB_ENV
 
         # Get labels list from github client by pull request number
-        labels=$(gh pr view $PULL_REQUEST_NUMBER --json labels | jq '[.labels[].name]' -c)
+        labels=$(GITHUB_TOKEN='${{ inputs.github_token }}' gh pr view "$PULL_REQUEST_NUMBER" --json labels | jq '[.labels[].name]' -c)
 
         # Store the pull request labels found
         echo "LABELS=$(echo $labels)" >> $GITHUB_ENV
@@ -194,12 +200,15 @@ runs:
         justone=$(cat <(echo $LABELS | jq .[]) <(echo $JUST_ONE_LABELS | jq .[]) | sort | uniq -d | wc -l)
         if [[ $justone != 1 ]]; then
           echo "VERIFIED=false" >> $GITHUB_ENV;
-          echo "ACTION_MESSAGE=Extra labels. The pull request must have just one of these labels: $SOME_LABELS" >> $GITHUB_ENV;
+          echo "ACTION_MESSAGE=Extra labels. The pull request must have just one of these labels: $JUST_ONE_LABELS" >> $GITHUB_ENV;
         fi
 
     - name: Get the last review written
       if: inputs.request-review == 'true'
       id: get-last-review
+      env:
+        INPUTS_PULL_REQUEST_NUMBER: '${{ inputs.pull_request.number }}'
+        INPUTS_REQUEST_REVIEW_HEADER: '${{ inputs.request-review-header }}'
       shell: bash
       run: |
         #!/bin/sh
@@ -207,7 +216,7 @@ runs:
         echo "ACTION_STATUS=GET_LAST_REVIEW" >> $GITHUB_ENV
 
         # Get the last review written for this 'github-action'.
-        lastreview=$(gh pr view $PULL_REQUEST_NUMBER --json reviews | jq '[ .reviews[] | select( (.author.login == "github-actions") and (.body | startswith("${{ inputs.request-review-header }}") ) ) ] | max_by(.submittedAt)' -c)
+        lastreview=$(gh pr view $INPUTS_PULL_REQUEST_NUMBER --json reviews | jq "[ .reviews[] | select( (.author.login == "github-actions") and (.body | startswith(\"$INPUTS_REQUEST_REVIEW_HEADER\") ) ) ] | max_by(.submittedAt)" -c)
 
         # Initialize the CREATE_REVIEW flag as false by default.
         echo "CREATE_REVIEW=false" >> $GITHUB_ENV
@@ -224,7 +233,7 @@ runs:
           exit 0;
         fi
 
-        # If the last review was UNAPPROVE && the current state is APPROVED then will updating the review is required.
+        # If the last review was UNAPPROVED && the current state is APPROVED then will updating the review is required.
         if [[ $(echo $lastreview | jq '.state') == "\"CHANGES_REQUESTED\"" && "$VERIFIED" == "true" ]]; then
           echo "CREATE_REVIEW=true" >> $GITHUB_ENV
           exit 0;
@@ -233,6 +242,8 @@ runs:
     - name: Send approved review
       if: inputs.request-review == 'true' && env.CREATE_REVIEW == 'true' && env.VERIFIED == 'true'
       id: send-approved-review
+      env:
+        INPUTS_REQUEST_REVIEW_HEADER: '${{ inputs.request-review-header }}'
       shell: bash
       run: |
         #!/bin/sh
@@ -242,7 +253,7 @@ runs:
         # Get the GitHub repository name to use it in a request.
         GITHUB_REPOSITORY=$(gh repo view --json nameWithOwner | jq .nameWithOwner -c --raw-output)
         # Make body message
-        body=$(echo '${{ inputs.request-review-header }} All labels are OK in this pull request' | sed 's/"/\\"/g')
+        body=$(echo "$INPUTS_REQUEST_REVIEW_HEADER All labels are OK in this pull request" | sed 's/"/\\"/g')
 
         curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
         -H "Authorization: token ${{ inputs.github-token }}" \
@@ -251,6 +262,8 @@ runs:
     - name: Send unapproved review
       if: inputs.request-review == 'true' && env.CREATE_REVIEW == 'true' && env.VERIFIED == 'false'
       id: send-unapproved-review
+      env:
+        INPUTS_REQUEST_REVIEW_HEADER: '${{ inputs.request-review-header }}'
       shell: bash
       run: |
         #!/bin/sh
@@ -260,7 +273,7 @@ runs:
         # Get the GitHub repository name to use it in a request.
         GITHUB_REPOSITORY=$(gh repo view --json nameWithOwner | jq .nameWithOwner -c --raw-output)
         # Make body message
-        body=$(echo '${{ inputs.request-review-header }} ${{ env.ACTION_MESSAGE }}' | sed 's/"/\\"/g')
+        body=$(echo "$INPUTS_REQUEST_REVIEW_HEADER $ACTION_MESSAGE" | sed 's/"/\\"/g')
 
         curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
         -H "Authorization: token ${{ inputs.github-token }}" \
@@ -268,6 +281,8 @@ runs:
 
     - name: End
       id: end
+      env:
+        INPUTS_EMIT_ERROR_IF_VERIFY_FAIL: ${{ inputs.emit-error-if-verify-fail }}
       shell: bash
       run: |
         #!/bin/sh
@@ -275,20 +290,20 @@ runs:
         echo "ACTION_STATUS=END" >> $GITHUB_ENV
 
         # Exit with error if the input is enabled and the verify was does not pass.
-        if [[ "$VERIFIED" == 'false' && '${{ inputs.emit-error-if-verify-fail }}' == 'true' ]]; then
+        if [[ "$VERIFIED" == 'false' && "$INPUTS_EMIT_ERROR_IF_VERIFY_FAIL" == 'true' ]]; then
           exit 1;
         fi
 
     - name: Exit
-      if: ${{ always() }}
+      if: always()
       id: exit
       shell: bash
       run: |
         #!/bin/sh
         # EXIT internal status
 
-        message=$(echo '${{ env.ACTION_MESSAGE }}' | sed 's/"/\\"/g')
-        labels=$(echo '${{ env.LABELS }}' | sed 's/"/\\"/g')
+        message=$(echo "$ACTION_MESSAGE" | sed 's/"/\\"/g')
+        labels=$(echo "$LABELS" | sed 's/"/\\"/g')
         repourl=$(gh pr view $PULL_REQUEST_NUMBER --json url | jq .url -c --raw-output)
         repotitle=$(gh pr view $PULL_REQUEST_NUMBER --json title | jq .title -c --raw-output)
 
@@ -312,14 +327,14 @@ runs:
         echo "**Labels assigned:** $labels" >> $GITHUB_STEP_SUMMARY
 
     - name: Exit with error
-      if: ${{ failure() }}
+      if: failure()
       id: exit-with-error
       shell: bash
       run: |
         #!/bin/sh
         # EXIT_WITH_ERROR internal status
 
-        message=$(echo '${{ env.ACTION_MESSAGE }}' | sed 's/"/\\"/g')
+        message=$(echo "$ACTION_MESSAGE" | sed 's/"/\\"/g')
 
         echo "::error ::[\"approved\": \"$VERIFIED\",\"action-status\": \"$ACTION_STATUS\", \"action-message\": \"$message\"]"
         exit 1;
