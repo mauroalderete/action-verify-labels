@@ -118,13 +118,15 @@ runs:
     - name: Get labels from pull request
       id: get-labels
       shell: bash
+      env:
+        GH_TOKEN: '${{ inputs.github_token }}'
       run: |
         #!/bin/sh
         # GET_LABELS_FROM_CONTEXT status
         echo "ACTION_STATUS=GET_LABELS_FROM_CONTEXT" >> $GITHUB_ENV
 
         # Get labels list from github client by pull request number
-        labels=$(GITHUB_TOKEN='${{ inputs.github_token }}' gh pr view "$PULL_REQUEST_NUMBER" --json labels | jq '[.labels[].name]' -c)
+        labels=$(gh pr view "$PULL_REQUEST_NUMBER" --json labels | jq '[.labels[].name]' -c)
 
         # Store the pull request labels found
         echo "LABELS=$(echo $labels)" >> $GITHUB_ENV
@@ -209,6 +211,7 @@ runs:
       env:
         INPUTS_PULL_REQUEST_NUMBER: '${{ inputs.pull_request.number }}'
         INPUTS_REQUEST_REVIEW_HEADER: '${{ inputs.request-review-header }}'
+        GH_TOKEN: '${{ inputs.github_token }}'
       shell: bash
       run: |
         #!/bin/sh
@@ -244,6 +247,7 @@ runs:
       id: send-approved-review
       env:
         INPUTS_REQUEST_REVIEW_HEADER: '${{ inputs.request-review-header }}'
+        GH_TOKEN: '${{ inputs.github_token }}'
       shell: bash
       run: |
         #!/bin/sh
@@ -256,7 +260,7 @@ runs:
         body=$(echo "$INPUTS_REQUEST_REVIEW_HEADER All labels are OK in this pull request" | sed 's/"/\\"/g')
 
         curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
-        -H "Authorization: token ${{ inputs.github-token }}" \
+        -H "Authorization: token $GH_TOKEN" \
         -d '{"commit_id":"'"$GITHUB_SHA"'","body":"'"$body"'","event":"APPROVE"}'
 
     - name: Send unapproved review
@@ -264,6 +268,7 @@ runs:
       id: send-unapproved-review
       env:
         INPUTS_REQUEST_REVIEW_HEADER: '${{ inputs.request-review-header }}'
+        GH_TOKEN: '${{ inputs.github_token }}'
       shell: bash
       run: |
         #!/bin/sh
@@ -276,7 +281,7 @@ runs:
         body=$(echo "$INPUTS_REQUEST_REVIEW_HEADER $ACTION_MESSAGE" | sed 's/"/\\"/g')
 
         curl -s -X POST https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/reviews \
-        -H "Authorization: token ${{ inputs.github-token }}" \
+        -H "Authorization: token $GH_TOKEN" \
         -d '{"commit_id": "'"$GITHUB_SHA"'", "body":"'"$body"'", "event":"REQUEST_CHANGES"}'
 
     - name: End
@@ -298,6 +303,8 @@ runs:
       if: always()
       id: exit
       shell: bash
+      env:
+        GH_TOKEN: '${{ inputs.github_token }}'
       run: |
         #!/bin/sh
         # EXIT internal status
