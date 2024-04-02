@@ -119,7 +119,7 @@ runs:
       id: get-labels
       shell: bash
       env:
-        GH_TOKEN: '${{ inputs.github_token }}'
+        GH_TOKEN: '${{ inputs.github-token }}'
       run: |
         #!/bin/sh
         # GET_LABELS_FROM_CONTEXT status
