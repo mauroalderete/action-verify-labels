@@ -77,7 +77,7 @@ runs:
         INPUTS_ALL: '${{ inputs.all }}'
         INPUTS_JUST_ONE: '${{ inputs.just-one }}'
         INPUTS_NONE: '${{ inputs.none }}'
-        INPUTS_PULL_REQUEST_NUMBER: '${{ inputs.pull_request.number }}'
+        INPUTS_PULL_REQUEST_NUMBER: '${{ inputs.pull-reques-number }}'
         INPUTS_REQUEST_REVIEW: '${{ inputs.request-review }}'
         INPUTS_SOME: '${{ inputs.some }}'
       run: |
@@ -209,9 +209,9 @@ runs:
       if: inputs.request-review == 'true'
       id: get-last-review
       env:
-        INPUTS_PULL_REQUEST_NUMBER: '${{ inputs.pull_request.number }}'
+        INPUTS_PULL_REQUEST_NUMBER: '${{ inputs.pull-request-number }}'
         INPUTS_REQUEST_REVIEW_HEADER: '${{ inputs.request-review-header }}'
-        GH_TOKEN: '${{ inputs.github_token }}'
+        GH_TOKEN: '${{ inputs.github-token }}'
       shell: bash
       run: |
         #!/bin/sh
@@ -247,7 +247,7 @@ runs:
       id: send-approved-review
       env:
         INPUTS_REQUEST_REVIEW_HEADER: '${{ inputs.request-review-header }}'
-        GH_TOKEN: '${{ inputs.github_token }}'
+        GH_TOKEN: '${{ inputs.github-token }}'
       shell: bash
       run: |
         #!/bin/sh
@@ -268,7 +268,7 @@ runs:
       id: send-unapproved-review
       env:
         INPUTS_REQUEST_REVIEW_HEADER: '${{ inputs.request-review-header }}'
-        GH_TOKEN: '${{ inputs.github_token }}'
+        GH_TOKEN: '${{ inputs.github-token }}'
       shell: bash
       run: |
         #!/bin/sh
@@ -304,7 +304,7 @@ runs:
       id: exit
       shell: bash
       env:
-        GH_TOKEN: '${{ inputs.github_token }}'
+        GH_TOKEN: '${{ inputs.github-token }}'
       run: |
         #!/bin/sh
         # EXIT internal status
