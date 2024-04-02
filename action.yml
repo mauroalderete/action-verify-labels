@@ -209,7 +209,6 @@ runs:
       if: inputs.request-review == 'true'
       id: get-last-review
       env:
-        INPUTS_PULL_REQUEST_NUMBER: '${{ inputs.pull-request-number }}'
         INPUTS_REQUEST_REVIEW_HEADER: '${{ inputs.request-review-header }}'
         GH_TOKEN: '${{ inputs.github-token }}'
       shell: bash
@@ -219,7 +218,7 @@ runs:
         echo "ACTION_STATUS=GET_LAST_REVIEW" >> $GITHUB_ENV
 
         # Get the last review written for this 'github-action'.
-        lastreview=$(gh pr view $INPUTS_PULL_REQUEST_NUMBER --json reviews | jq "[ .reviews[] | select( (.author.login == "github-actions") and (.body | startswith(\"$INPUTS_REQUEST_REVIEW_HEADER\") ) ) ] | max_by(.submittedAt)" -c)
+        lastreview=$(gh pr view $PULL_REQUEST_NUMBER --json reviews | jq "[ .reviews[] | select( (.author.login == "github-actions") and (.body | startswith(\"$INPUTS_REQUEST_REVIEW_HEADER\") ) ) ] | max_by(.submittedAt)" -c)
 
         # Initialize the CREATE_REVIEW flag as false by default.
         echo "CREATE_REVIEW=false" >> $GITHUB_ENV
